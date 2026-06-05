@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+build/
+*.spec
+PromptLab.exe
+data/chat_history.csv
+data/settings.json
+logs/
+graphs/*.png
