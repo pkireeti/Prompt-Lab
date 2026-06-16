@@ -28,7 +28,7 @@ from backend.session_logger import SessionLogger, DATA_DIR
 DEFAULT_NVIDIA_KEY = (
     "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"
 )
-DEFAULT_NVIDIA_MODEL = "minimaxai/minimax-m3"
+DEFAULT_NVIDIA_MODEL = "google/diffusiongemma-26b-a4b-it"
 
 app = FastAPI(title="PromptLab")
 

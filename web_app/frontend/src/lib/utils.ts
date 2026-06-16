@@ -6,6 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const PREFERRED_API_MODELS = [
+  'google/diffusiongemma-26b-a4b-it',
   'meta/llama-3.1-8b-instruct',
   'meta/llama-3.3-70b-instruct',
   'minimaxai/minimax-m3',
@@ -13,7 +14,7 @@ export const PREFERRED_API_MODELS = [
   'gpt-4o',
 ]
 
-export const DEFAULT_API_MODEL = 'minimaxai/minimax-m3'
+export const DEFAULT_API_MODEL = 'google/diffusiongemma-26b-a4b-it'
 
 const API_PROVIDERS: { patterns: RegExp[]; name: string; baseUrl: string }[] = [
   { patterns: [/^nvapi-/i, /nvapi/i], name: 'NVIDIA', baseUrl: 'https://integrate.api.nvidia.com/v1' },
