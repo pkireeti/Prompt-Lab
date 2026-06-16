@@ -231,14 +231,15 @@ export default function App() {
     api.createSession().then(s => { setSessionId(s.session_id); clearMessages() })
   }, [clearMessages])
 
-  const handleRunComparison = useCallback(async (temps: number[]): Promise<ComparisonRun[]> => {
+  const handleRunComparison = useCallback(async (temps: number[], prompt?: string): Promise<ComparisonRun[]> => {
+    const lastPrompt = prompt || messages.filter(m => m.role === 'user').pop()?.content || ''
     const results: ComparisonRun[] = []
     for (const temp of temps) {
       const opts = { ...options, temperature: temp, stream: false }
       try {
         const res = await api.sendMessage(
           sessionId,
-          'Write a one-sentence explanation of how neural networks learn.',
+          lastPrompt,
           opts,
           { mode, apiKey: mode === 'api' ? apiKey : '', useApi: mode !== 'local', apiModel, apiBaseUrl },
         )
@@ -259,7 +260,7 @@ export default function App() {
       }
     }
     return results
-  }, [sessionId, options, mode, apiKey, apiModel])
+  }, [sessionId, options, mode, apiKey, apiModel, messages])
 
   const currentModels = useApi ? apiModels : localModels
 

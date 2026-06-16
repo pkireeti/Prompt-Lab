@@ -13,7 +13,7 @@ interface ComparisonViewProps {
   open: boolean
   onClose: () => void
   prompt: string
-  onRunComparison: (temps: number[]) => Promise<ComparisonRun[]>
+  onRunComparison: (temps: number[], prompt: string) => Promise<ComparisonRun[]>
 }
 
 const TEMPERATURES = [
@@ -29,7 +29,7 @@ export function ComparisonView({ open, onClose, prompt, onRunComparison }: Compa
   const handleRun = async () => {
     setLoading(true)
     try {
-      const results = await onRunComparison(TEMPERATURES.map(t => t.temp))
+      const results = await onRunComparison(TEMPERATURES.map(t => t.temp), prompt)
       setRuns(results.map((r, i) => ({
         ...r,
         label: TEMPERATURES[i].label,
