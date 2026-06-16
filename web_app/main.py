@@ -304,7 +304,4 @@ async def export_session():
 
 @app.get("/api/chart")
 async def generate_chart():
-    path = logger.plot_temperature_chart()
-    if not path:
-        raise HTTPException(400, "Not enough data for chart")
-    return FileResponse(str(path), media_type="image/png")
+    raise HTTPException(501, "Charts not available in web version")

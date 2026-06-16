@@ -1,15 +1,10 @@
-"""
-Session logging — CSV history, JSON export, settings, experiment charts.
-"""
-
 from __future__ import annotations
 
+import csv
 import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
-
-import pandas as pd
 
 from .model import GenerationOptions
 
@@ -23,8 +18,6 @@ SETTINGS_JSON = DATA_DIR / "settings.json"
 
 
 class SessionLogger:
-    """Persist chat turns, settings, and teaching experiment graphs."""
-
     def __init__(self) -> None:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -40,7 +33,6 @@ class SessionLogger:
         error: bool = False,
         duration_ms: Optional[int] = None,
     ) -> None:
-        """Append one user/assistant turn to data/chat_history.csv."""
         seed_value = -1 if options.random_seed else options.seed
         row = {
             "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -52,21 +44,25 @@ class SessionLogger:
             "max_tokens": options.num_predict,
             "repeat_penalty": options.repeat_penalty,
             "seed": seed_value,
-            "random_seed": options.random_seed,
-            "stream": stream,
+            "random_seed": str(options.random_seed),
+            "stream": str(stream),
             "system_prompt": system_prompt[:300],
             "response_length": len(assistant_message),
-            "error": error,
-            "duration_ms": duration_ms or "",
+            "error": str(error),
+            "duration_ms": str(duration_ms or ""),
         }
-        df = pd.DataFrame([row])
         write_header = not CHAT_CSV.exists()
-        df.to_csv(CHAT_CSV, mode="a", header=write_header, index=False)
+        with open(CHAT_CSV, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=list(row.keys()))
+            if write_header:
+                writer.writeheader()
+            writer.writerow(row)
 
-    def load_history(self) -> pd.DataFrame:
+    def load_history(self) -> list[dict[str, Any]]:
         if not CHAT_CSV.exists():
-            return pd.DataFrame()
-        return pd.read_csv(CHAT_CSV)
+            return []
+        with open(CHAT_CSV, newline="", encoding="utf-8") as f:
+            return list(csv.DictReader(f))
 
     def load_settings(self) -> Optional[dict[str, Any]]:
         if not SETTINGS_JSON.exists():
@@ -83,14 +79,13 @@ class SessionLogger:
             json.dump(settings, f, indent=2)
 
     def export_session_json(self) -> Path:
-        """Export full chat log + settings to logs/session_<timestamp>.json."""
         settings = self.load_settings() or {}
         model_name = settings.get("model_name", "unknown")
         payload = {
             "exported_at": datetime.now().isoformat(timespec="seconds"),
             "model": model_name,
             "settings": settings,
-            "history": self.load_history().to_dict(orient="records"),
+            "history": self.load_history(),
         }
         filename = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         path = LOGS_DIR / filename
@@ -99,61 +94,7 @@ class SessionLogger:
         return path
 
     def plot_temperature_chart(self) -> Optional[Path]:
-        """
-        Save a chart: temperature vs response length (teaching demo).
-        Returns path to PNG or None if not enough data.
-        """
-        import matplotlib
-
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-
-        df = self.load_history()
-        if df.empty or "temperature" not in df.columns:
-            return None
-
-        if "error" in df.columns:
-            clean = df[~df["error"].fillna(False).astype(bool)].copy()
-        else:
-            clean = df.copy()
-        if clean.empty or len(clean) < 2:
-            return None
-
-        clean["temperature"] = pd.to_numeric(clean["temperature"], errors="coerce")
-        clean["response_length"] = pd.to_numeric(
-            clean["response_length"], errors="coerce"
-        )
-        clean = clean.dropna(subset=["temperature", "response_length"])
-        if len(clean) < 2:
-            return None
-
-        fig, ax = plt.subplots(figsize=(8, 4.5))
-        ax.scatter(
-            clean["temperature"],
-            clean["response_length"],
-            c="#ffffff",
-            edgecolors="#666666",
-            alpha=0.85,
-            s=50,
-        )
-        ax.set_xlabel("Temperature")
-        ax.set_ylabel("Response length (characters)")
-        ax.set_title("PromptLab — Temperature vs response length")
-        ax.set_facecolor("#0a0a0a")
-        fig.patch.set_facecolor("#000000")
-        ax.tick_params(colors="#cccccc")
-        ax.xaxis.label.set_color("#cccccc")
-        ax.yaxis.label.set_color("#cccccc")
-        ax.title.set_color("#ffffff")
-        for spine in ax.spines.values():
-            spine.set_color("#333333")
-        ax.grid(True, color="#222222", linestyle="--", alpha=0.6)
-        fig.tight_layout()
-
-        path = GRAPHS_DIR / "temperature_vs_response_length.png"
-        fig.savefig(path, dpi=120)
-        plt.close(fig)
-        return path
+        return None
 
     @staticmethod
     def data_folder() -> Path:
