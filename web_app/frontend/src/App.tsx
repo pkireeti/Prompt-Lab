@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { AnimatePresence } from 'framer-motion'
-import { ChevronDown, Upload, PanelLeftClose, SlidersHorizontal } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ChevronDown, Upload, PanelLeftClose, SlidersHorizontal, Check } from 'lucide-react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { ParameterPanel } from '@/components/parameters/ParameterPanel'
 import { ChatPanel } from '@/components/chat/ChatPanel'
@@ -34,6 +34,18 @@ export default function App() {
   const [apiConnected, setApiConnected] = useState(false)
   const [mode, setMode] = useState<'local' | 'api' | 'nvidia'>('nvidia')
   const [sessions, setSessions] = useState<{ id: string; title: string; timestamp: string; messages: number; model: string }[]>([])
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false)
+  const modelDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setModelDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   const { options, updateOption } = useSettings()
   const { messages, isStreaming, streamingContent, sendMessage, clearMessages } = useChat(sessionId)
@@ -281,15 +293,41 @@ export default function App() {
                 <PanelLeftClose className="w-4 h-4 rotate-180" />
               </button>
             )}
-            <div className="relative">
-              <select
-                value={selectedModel}
-                onChange={e => handleModelChange(e.target.value)}
-                className="appearance-none bg-transparent border border-border rounded-lg pl-3 pr-7 py-1.5 text-sm font-medium text-text-primary cursor-pointer focus:outline-none focus:border-white/20 hover:border-white/20 transition-colors min-w-[120px]"
+            <div className="relative" ref={modelDropdownRef}>
+              <button
+                onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-card text-sm font-medium text-text-primary hover:bg-white/[0.04] transition-all"
               >
-                {currentModels.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                <span className="max-w-[160px] truncate">{selectedModel || 'Select model'}</span>
+                <ChevronDown className={'w-3.5 h-3.5 text-text-muted transition-transform ' + (modelDropdownOpen ? 'rotate-180' : '')} />
+              </button>
+              <AnimatePresence>
+                {modelDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                    className="absolute top-full mt-1.5 left-0 w-72 max-h-64 overflow-y-auto bg-surface border border-border rounded-xl shadow-xl z-50 py-1"
+                    style={{ scrollbarWidth: 'thin' }}
+                  >
+                    {currentModels.length === 0 ? (
+                      <div className="px-3 py-4 text-xs text-text-muted text-center">No models available</div>
+                    ) : currentModels.map(m => (
+                      <button
+                        key={m}
+                        onClick={() => { handleModelChange(m); setModelDropdownOpen(false) }}
+                        className={'w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ' + (m === selectedModel ? 'bg-white/[0.06] text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.02]')}
+                      >
+                        <span className={'w-4 h-4 flex items-center justify-center ' + (m === selectedModel ? 'text-text-primary' : 'text-transparent')}>
+                          {m === selectedModel && <Check className="w-3.5 h-3.5" />}
+                        </span>
+                        <span className="truncate">{m}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-full border border-border bg-card">
               <button
