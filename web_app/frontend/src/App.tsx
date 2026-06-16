@@ -231,11 +231,11 @@ export default function App() {
     api.createSession().then(s => { setSessionId(s.session_id); clearMessages() })
   }, [clearMessages])
 
-  const handleRunComparison = useCallback(async (temps: number[], prompt?: string): Promise<ComparisonRun[]> => {
+  const handleRunComparison = useCallback(async (slots: { label: string; temperature: number; top_k: number; top_p: number }[], prompt?: string): Promise<ComparisonRun[]> => {
     const lastPrompt = prompt || messages.filter(m => m.role === 'user').pop()?.content || ''
     const results: ComparisonRun[] = []
-    for (const temp of temps) {
-      const opts = { ...options, temperature: temp, stream: false }
+    for (const slot of slots) {
+      const opts = { ...options, temperature: slot.temperature, top_k: slot.top_k, top_p: slot.top_p, stream: false }
       try {
         const res = await api.sendMessage(
           sessionId,
@@ -245,17 +245,24 @@ export default function App() {
         )
         const data = await res.json()
         results.push({
-          label: `temp=${temp}`, temperature: temp,
+          label: slot.label,
+          temperature: slot.temperature,
+          top_k: slot.top_k,
+          top_p: slot.top_p,
           response: data.reply || '(no response)',
           analytics: {
             tokens_used: (data.reply || '').split(' ').length,
-            latency_ms: 0, model: useApi ? apiModel : 'local', temperature: temp, generation_speed: 0,
+            latency_ms: 0,
+            model: useApi ? apiModel : 'local',
+            temperature: slot.temperature,
+            generation_speed: 0,
           },
         })
       } catch {
         results.push({
-          label: `temp=${temp}`, temperature: temp, response: 'Error',
-          analytics: { tokens_used: 0, latency_ms: 0, model: 'local', temperature: temp, generation_speed: 0 },
+          label: slot.label, temperature: slot.temperature, top_k: slot.top_k, top_p: slot.top_p,
+          response: 'Error',
+          analytics: { tokens_used: 0, latency_ms: 0, model: 'local', temperature: slot.temperature, generation_speed: 0 },
         })
       }
     }

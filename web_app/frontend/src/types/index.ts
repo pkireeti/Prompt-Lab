@@ -29,6 +29,8 @@ export interface ResponseAnalytics {
 export interface ComparisonRun {
   label: string
   temperature: number
+  top_k: number
+  top_p: number
   response: string
   analytics: ResponseAnalytics
 }
