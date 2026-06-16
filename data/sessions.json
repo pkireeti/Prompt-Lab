@@ -1,0 +1,30 @@
+[
+  {
+    "id": "04b1af05cf4e",
+    "title": "New session",
+    "timestamp": "2026-06-16T11:04:33",
+    "messages": 0,
+    "model": "local"
+  },
+  {
+    "id": "ba070e5a27db",
+    "title": "New session",
+    "timestamp": "2026-06-16T11:04:33",
+    "messages": 0,
+    "model": "local"
+  },
+  {
+    "id": "137ec31142d8",
+    "title": "New session",
+    "timestamp": "2026-06-16T11:04:33",
+    "messages": 0,
+    "model": "local"
+  },
+  {
+    "id": "db7d84dc1295",
+    "title": "hey",
+    "timestamp": "2026-06-16T11:04:33",
+    "messages": 6,
+    "model": "minimaxai/minimax-m3"
+  }
+]

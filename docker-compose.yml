@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  promptlab:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - TZ=UTC

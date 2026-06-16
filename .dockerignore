@@ -1,0 +1,11 @@
+node_modules
+.git
+__pycache__
+*.pyc
+.env
+data
+server.log
+web_app/frontend/node_modules
+web_app/frontend/src
+ui
+main.py

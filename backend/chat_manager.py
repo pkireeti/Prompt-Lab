@@ -1,34 +1,66 @@
 """
 Chat history and message assembly for PromptLab.
+Supports both Ollama (local) and OpenAI-compatible API models.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Generator, List, Optional, Tuple
+from typing import Generator, List, Optional, Tuple, Union
 
-from .model import GenerationOptions, OllamaModel
+from .model import GenerationOptions, OllamaModel, ApiModel
 
 
 @dataclass
 class Message:
-    role: str  # "user" | "assistant"
+    role: str
     content: str
 
 
 @dataclass
 class ChatManager:
-    """Manages messages and delegates generation to OllamaModel."""
-
     model: OllamaModel = field(default_factory=OllamaModel)
+    api_model: Optional[ApiModel] = None
+    api_key: str = ""
+    use_api: bool = False
+    api_model_name: str = "gpt-4o-mini"
     messages: List[Message] = field(default_factory=list)
     system_prompt: str = (
         "You are a friendly, patient teacher. "
         "Explain clearly and stay helpful and respectful."
     )
-    # Small models (e.g. qwen3:1.7b) often ignore role=system alone;
-    # reinforcing rules on the latest user turn works much better.
     reinforce_system_on_user: bool = True
+
+    def set_api_key(self, api_key: str, base_url: str = "") -> None:
+        clean = (
+            api_key.strip()
+            .replace("\u200b", "")
+            .replace("\u200c", "")
+            .replace("\u200d", "")
+            .replace("\ufeff", "")
+        )
+        self.api_key = clean
+        if clean:
+            if not base_url:
+                if clean.lower().startswith("nvapi") or "nvapi" in clean.lower():
+                    base_url = "https://integrate.api.nvidia.com/v1"
+                elif clean.startswith("gsk_"):
+                    base_url = "https://api.groq.com/openai/v1"
+                elif clean.startswith("pplx-"):
+                    base_url = "https://api.perplexity.ai"
+                else:
+                    base_url = "https://api.openai.com/v1"
+            self.api_model = ApiModel(api_key=clean, base_url=base_url)
+            self.use_api = True
+        else:
+            self.api_model = None
+            self.use_api = False
+
+    def set_use_api(self, use: bool) -> None:
+        self.use_api = use and bool(self.api_key)
+
+    def set_api_model_name(self, name: str) -> None:
+        self.api_model_name = name
 
     def set_system_prompt(self, text: str) -> None:
         self.system_prompt = text.strip()
@@ -43,26 +75,22 @@ class ChatManager:
         self.messages.append(Message(role="assistant", content=text.strip()))
 
     def format_system_for_api(self) -> str:
-        """System string sent to Ollama's top-level `system` field."""
-        return self.system_prompt.strip()
+        prompt = self.system_prompt.strip()
+        if self.use_api and self.api_model_name:
+            prompt += (
+                f"\n\nYou are currently running via API as model: {self.api_model_name}"
+            )
+        elif not self.use_api:
+            prompt += f"\n\nYou are currently running locally as model: {self.model.model_name}"
+        return prompt
 
     def _augment_user_content(self, user_content: str) -> str:
-        """
-        Wrap the latest user message so small models (e.g. qwen3:1.7b) follow rules.
-
-        Uses a simple [RULES] / [QUESTION] format — works better than role=system alone.
-        """
         rules = self.system_prompt.strip()
         if not rules:
             return user_content
         return f"[RULES]\n{rules}\n\n[QUESTION]\n{user_content}"
 
     def build_messages(self) -> Tuple[List[dict], str]:
-        """
-        Build chat API messages (user/assistant only) and system string.
-
-        Returns (messages, system_prompt_for_api).
-        """
         api_messages: List[dict] = []
         last_index = len(self.messages) - 1
 
@@ -75,6 +103,7 @@ class ChatManager:
                 and msg.role == "user"
                 and i == last_index
                 and self.system_prompt.strip()
+                and not self.use_api
             ):
                 content = self._augment_user_content(content)
             api_messages.append({"role": msg.role, "content": content})
@@ -90,12 +119,21 @@ class ChatManager:
         self.add_user_message(user_text)
         api_messages, system = self.build_messages()
 
-        result = self.model.chat(
-            messages=api_messages,
-            system=system or None,
-            options=options,
-            stream=stream,
-        )
+        if self.use_api and self.api_model:
+            result = self.api_model.chat(
+                messages=api_messages,
+                model=self.api_model_name,
+                options=options,
+                stream=stream,
+                system=system or None,
+            )
+        else:
+            result = self.model.chat(
+                messages=api_messages,
+                system=system or None,
+                options=options,
+                stream=stream,
+            )
 
         if stream:
             return result

@@ -1,0 +1,384 @@
+import { useState, useEffect, useCallback } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import { ChevronDown, Upload, PanelLeftClose, SlidersHorizontal } from 'lucide-react'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { ParameterPanel } from '@/components/parameters/ParameterPanel'
+import { ChatPanel } from '@/components/chat/ChatPanel'
+import { ChatInput } from '@/components/chat/ChatInput'
+import { HeroSection } from '@/components/welcome/HeroSection'
+import { DocsDialog } from '@/components/welcome/DocsDialog'
+import { ComparisonView } from '@/components/comparison/ComparisonView'
+import { TemplatesPanel } from '@/components/templates/TemplatesPanel'
+import type { PromptTemplate } from '@/components/templates/TemplatesPanel'
+import { api } from '@/lib/api'
+import { detectProvider, PREFERRED_API_MODELS, DEFAULT_API_KEY, DEFAULT_API_MODEL } from '@/lib/utils'
+import { useChat } from '@/hooks/useChat'
+import { useSettings } from '@/hooks/useSettings'
+import type { ComparisonRun } from '@/types'
+
+export default function App() {
+  const [sessionId, setSessionId] = useState('')
+  const [activeNav, setActiveNav] = useState('chat')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [paramsVisible, setParamsVisible] = useState(true)
+  const [comparisonOpen, setComparisonOpen] = useState(false)
+  const [showHero, setShowHero] = useState(true)
+  const [showDocs, setShowDocs] = useState(false)
+  const [localModels, setLocalModels] = useState<string[]>([])
+  const [selectedModel, setSelectedModel] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [apiBaseUrl, setApiBaseUrl] = useState('https://api.openai.com/v1')
+  const [useApi, setUseApi] = useState(true)
+  const [apiModel, setApiModel] = useState(DEFAULT_API_MODEL)
+  const [apiModels, setApiModels] = useState<string[]>([])
+  const [apiConnected, setApiConnected] = useState(false)
+  const [mode, setMode] = useState<'local' | 'api' | 'nvidia'>('nvidia')
+  const [sessions, setSessions] = useState<{ id: string; title: string; timestamp: string; messages: number; model: string }[]>([])
+
+  const { options, updateOption } = useSettings()
+  const { messages, isStreaming, streamingContent, sendMessage, clearMessages } = useChat(sessionId)
+
+  const loadSessions = useCallback(async () => {
+    try { const data = await api.listSessions(); setSessions(data.sessions) } catch {}
+  }, [])
+
+  useEffect(() => {
+    api.health().then(h => {
+      if (h.models?.length) { setLocalModels(h.models) }
+    })
+    api.createSession().then(s => {
+      setSessionId(s.session_id)
+      loadSessions()
+    })
+    const provider = detectProvider(DEFAULT_API_KEY)
+    const baseUrl = provider?.baseUrl || 'https://integrate.api.nvidia.com/v1'
+    setApiKey(DEFAULT_API_KEY)
+    setApiBaseUrl(baseUrl)
+    setApiModel(DEFAULT_API_MODEL)
+    setUseApi(true)
+    setMode('nvidia')
+    api.listApiModels(DEFAULT_API_KEY, baseUrl).then(result => {
+      if (result.length) {
+        const sorted = [...result].sort((a, b) => {
+          const ai = PREFERRED_API_MODELS.indexOf(a)
+          const bi = PREFERRED_API_MODELS.indexOf(b)
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+        })
+        setApiModels(sorted)
+        if (sorted.length) setSelectedModel(sorted[0])
+        setApiConnected(true)
+      }
+    }).catch(() => {})
+  }, [loadSessions])
+
+  const handleSelectSession = useCallback(async (id: string) => {
+    setSessionId(id)
+    clearMessages()
+    setShowHero(false)
+  }, [clearMessages])
+
+  const handleDeleteSession = useCallback(async (id: string) => {
+    await api.deleteSession(id)
+    loadSessions()
+    if (sessionId === id) {
+      const s = await api.createSession()
+      setSessionId(s.session_id)
+      setShowHero(true)
+    }
+  }, [sessionId, loadSessions])
+
+  const handleApiKeyChange = useCallback(async (raw: string) => {
+    const key = raw.replace(/[\u200b\u200c\u200d\ufeff]/g, '').trim()
+    setApiKey(key)
+    setApiConnected(false)
+    setUseApi(false)
+    setApiModels([])
+    if (!key || key.length < 20) return
+    setMode('api')
+    const provider = detectProvider(key)
+    const baseUrl = provider?.baseUrl || 'https://api.openai.com/v1'
+    if (provider) setApiBaseUrl(baseUrl)
+    try {
+      const result = await api.listApiModels(key, baseUrl)
+      if (result.length) {
+        const sorted = [...result].sort((a, b) => {
+          const ai = PREFERRED_API_MODELS.indexOf(a)
+          const bi = PREFERRED_API_MODELS.indexOf(b)
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+        })
+        setApiModels(sorted)
+        setApiModel(sorted[0])
+        setSelectedModel(sorted[0])
+        setUseApi(true)
+        setApiConnected(true)
+      }
+    } catch {}
+  }, [])
+
+  const handleSetMode = useCallback((newMode: 'local' | 'api' | 'nvidia') => {
+    setMode(newMode)
+    if (newMode === 'local') {
+      setUseApi(false)
+      setApiConnected(false)
+      if (localModels.length) setSelectedModel(localModels[0])
+    } else if (newMode === 'nvidia') {
+      setApiKey(DEFAULT_API_KEY)
+      const provider = detectProvider(DEFAULT_API_KEY)
+      const baseUrl = provider?.baseUrl || 'https://integrate.api.nvidia.com/v1'
+      setApiBaseUrl(baseUrl)
+      setUseApi(true)
+      setApiConnected(true)
+      setApiModel(DEFAULT_API_MODEL)
+      setSelectedModel(DEFAULT_API_MODEL)
+      if (!apiModels.length) {
+        api.listApiModels(DEFAULT_API_KEY, baseUrl).then(result => {
+          if (result.length) {
+            const sorted = [...result].sort((a, b) => {
+              const ai = PREFERRED_API_MODELS.indexOf(a)
+              const bi = PREFERRED_API_MODELS.indexOf(b)
+              return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+            })
+            setApiModels(sorted)
+          }
+        }).catch(() => {})
+      }
+    } else {
+      setUseApi(true)
+      setApiConnected(false)
+      if (apiKey && apiKey.length >= 20) {
+        api.listApiModels(apiKey, apiBaseUrl).then(result => {
+          if (result.length) {
+            const sorted = [...result].sort((a, b) => {
+              const ai = PREFERRED_API_MODELS.indexOf(a)
+              const bi = PREFERRED_API_MODELS.indexOf(b)
+              return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+            })
+            setApiModels(sorted)
+            setApiModel(sorted[0])
+            setSelectedModel(sorted[0])
+            setApiConnected(true)
+          }
+        }).catch(() => {})
+      }
+    }
+  }, [localModels, apiModels, apiKey, apiBaseUrl])
+
+  const handleApiDisconnect = useCallback(() => {
+    setApiKey('')
+    setApiConnected(false)
+    setUseApi(false)
+    setApiModels([])
+    setMode('local')
+    if (localModels.length) setSelectedModel(localModels[0])
+  }, [localModels])
+
+  const handleModelChange = useCallback((model: string) => {
+    if (useApi) {
+      setApiModel(model)
+    }
+    setSelectedModel(model)
+    clearMessages()
+    setShowHero(true)
+    api.createSession().then(s => setSessionId(s.session_id))
+  }, [useApi, clearMessages])
+
+  const handleSend = useCallback((text: string) => {
+    setShowHero(false)
+    sendMessage(text, options, {
+      apiKey: useApi ? apiKey : '',
+      useApi,
+      apiModel,
+      apiBaseUrl,
+    })
+    setTimeout(loadSessions, 500)
+  }, [sendMessage, options, apiKey, useApi, apiModel, loadSessions])
+
+  const handleUseTemplate = useCallback((t: PromptTemplate) => {
+    updateOption('system_prompt', t.systemPrompt)
+    setActiveNav('chat')
+    setShowHero(false)
+    setTimeout(() => sendMessage(t.starterMessage, options, {
+      apiKey: useApi ? apiKey : '',
+      useApi,
+      apiModel,
+      apiBaseUrl,
+    }), 100)
+  }, [updateOption, sendMessage, options, apiKey, useApi, apiModel, apiBaseUrl])
+
+  const handleNewSession = useCallback(async () => {
+    clearMessages()
+    setShowHero(true)
+    setComparisonOpen(false)
+    const s = await api.createSession()
+    setSessionId(s.session_id)
+  }, [clearMessages])
+
+  const handleExport = useCallback(async () => {
+    try {
+      const data = await api.exportSession()
+      alert('Session exported: ' + data.path)
+    } catch (err: any) { alert(err.message) }
+  }, [])
+
+  const handleStartExperiment = useCallback(() => {
+    setShowHero(false)
+    api.createSession().then(s => { setSessionId(s.session_id); clearMessages() })
+  }, [clearMessages])
+
+  const handleRunComparison = useCallback(async (temps: number[]): Promise<ComparisonRun[]> => {
+    const results: ComparisonRun[] = []
+    for (const temp of temps) {
+      const opts = { ...options, temperature: temp, stream: false }
+      try {
+        const res = await api.sendMessage(
+          sessionId,
+          'Write a one-sentence explanation of how neural networks learn.',
+          opts,
+          { apiKey: useApi ? apiKey : '', useApi, apiModel, apiBaseUrl },
+        )
+        const data = await res.json()
+        results.push({
+          label: `temp=${temp}`, temperature: temp,
+          response: data.reply || '(no response)',
+          analytics: {
+            tokens_used: (data.reply || '').split(' ').length,
+            latency_ms: 0, model: useApi ? apiModel : 'local', temperature: temp, generation_speed: 0,
+          },
+        })
+      } catch {
+        results.push({
+          label: `temp=${temp}`, temperature: temp, response: 'Error',
+          analytics: { tokens_used: 0, latency_ms: 0, model: 'local', temperature: temp, generation_speed: 0 },
+        })
+      }
+    }
+    return results
+  }, [sessionId, options, apiKey, useApi, apiModel])
+
+  const currentModels = useApi ? apiModels : localModels
+
+  return (
+    <div className="h-screen w-screen flex bg-background overflow-hidden">
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onNewSession={handleNewSession}
+        onOpenDocs={() => setShowDocs(true)}
+        activeNav={activeNav}
+        onNavChange={setActiveNav}
+        apiKey={apiKey}
+        apiBaseUrl={apiBaseUrl}
+        useApi={useApi}
+        apiModel={apiModel}
+        apiConnected={apiConnected}
+        onApiKeyChange={handleApiKeyChange}
+        onApiBaseUrlChange={setApiBaseUrl}
+        onApiDisconnect={handleApiDisconnect}
+        onApiModelChange={setApiModel}
+        apiModels={apiModels}
+        sessions={sessions}
+        currentSessionId={sessionId}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
+      />
+
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 h-14 border-b border-border bg-background">
+          <div className="flex items-center gap-3">
+            {sidebarCollapsed && (
+              <button onClick={() => setSidebarCollapsed(false)} className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-colors">
+                <PanelLeftClose className="w-4 h-4 rotate-180" />
+              </button>
+            )}
+            <div className="relative">
+              <select
+                value={selectedModel}
+                onChange={e => handleModelChange(e.target.value)}
+                className="appearance-none bg-transparent border border-border rounded-lg pl-3 pr-7 py-1.5 text-sm font-medium text-text-primary cursor-pointer focus:outline-none focus:border-white/20 hover:border-white/20 transition-colors min-w-[120px]"
+              >
+                {currentModels.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+            </div>
+            <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-full border border-border bg-card">
+              <button
+                onClick={() => handleSetMode('local')}
+                className={'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all ' + (mode === 'local' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}
+              >
+                Local
+              </button>
+              <button
+                onClick={() => handleSetMode('nvidia')}
+                className={'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all ' + (mode === 'nvidia' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}
+              >
+                NVIDIA
+              </button>
+              <button
+                onClick={() => { if (apiKey && apiKey.length >= 20 && apiKey !== DEFAULT_API_KEY) handleSetMode('api') }}
+                className={'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all ' + (mode === 'api' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}
+              >
+                API
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setParamsVisible(!paramsVisible)}
+              className={'p-1.5 rounded-md text-sm transition-all ' + (paramsVisible ? 'bg-white/[0.06] text-text-primary' : 'text-text-muted hover:text-text-primary hover:bg-white/[0.04]')}
+              title="Toggle parameters"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+            {!showHero && messages.length > 0 && (
+              <button
+                onClick={() => setComparisonOpen(!comparisonOpen)}
+                className={'px-3 py-1.5 rounded-md text-sm font-medium transition-all ' + (comparisonOpen ? 'bg-white/10 text-text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-white/[0.04]')}
+              >
+                Compare
+              </button>
+            )}
+            <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-all">
+              <Upload className="w-4 h-4" /> Export
+            </button>
+          </div>
+        </div>
+
+        {activeNav === 'templates' ? (
+          <TemplatesPanel onUseTemplate={handleUseTemplate} />
+        ) : showHero ? (
+          <HeroSection onStartExperiment={handleStartExperiment} onOpenDocs={() => setShowDocs(true)} />
+        ) : (
+          <div className="flex-1 flex flex-col min-h-0">
+            <ChatPanel messages={messages} isStreaming={isStreaming} streamingContent={streamingContent} />
+            <div className="px-4">
+              <AnimatePresence>
+                <ComparisonView
+                  open={comparisonOpen}
+                  onClose={() => setComparisonOpen(false)}
+                  prompt={messages.filter(m => m.role === 'user').pop()?.content || ''}
+                  onRunComparison={handleRunComparison}
+                />
+              </AnimatePresence>
+            </div>
+            <ChatInput
+              onSend={handleSend}
+              disabled={!sessionId}
+              isStreaming={isStreaming}
+              onToggleParams={() => setParamsVisible(!paramsVisible)}
+            />
+          </div>
+        )}
+      </div>
+
+      <ParameterPanel
+        visible={paramsVisible}
+        onToggle={() => setParamsVisible(!paramsVisible)}
+        options={options}
+        onUpdate={updateOption}
+      />
+
+      <DocsDialog open={showDocs} onClose={() => setShowDocs(false)} />
+    </div>
+  )
+}
