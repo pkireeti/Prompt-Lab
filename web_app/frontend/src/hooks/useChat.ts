@@ -18,7 +18,7 @@ export function useChat(sessionId: string) {
     setStreamingContent('')
   }, [])
 
-  const sendMessage = useCallback(async (text: string, options: GenerationOptions, extras?: { apiKey?: string; useApi?: boolean; apiModel?: string; apiBaseUrl?: string }) => {
+  const sendMessage = useCallback(async (text: string, options: GenerationOptions, extras?: { apiKey?: string; useApi?: boolean; apiModel?: string; apiBaseUrl?: string; mode?: string }) => {
     if (!text.trim() || isStreaming) return
 
     const userMsg: ChatMessage = {

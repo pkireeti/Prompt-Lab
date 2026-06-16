@@ -23,10 +23,10 @@ export const api = {
     return fetchJSON<HealthData>(`${BASE}/health`)
   },
 
-  async listApiModels(apiKey: string, baseUrl?: string): Promise<string[]> {
+  async listApiModels(apiKey: string, baseUrl?: string, mode?: string): Promise<string[]> {
     const data = await fetchJSON<{ models: string[] }>(`${BASE}/api-models`, {
       method: 'POST',
-      body: JSON.stringify({ api_key: apiKey, base_url: baseUrl || 'https://api.openai.com/v1' }),
+      body: JSON.stringify({ api_key: apiKey, base_url: baseUrl || 'https://api.openai.com/v1', mode: mode || 'nvidia' }),
     })
     return data.models
   },
@@ -46,7 +46,7 @@ export const api = {
     sessionId: string,
     message: string,
     options: GenerationOptions,
-    extras?: { apiKey?: string; useApi?: boolean; apiModel?: string; apiBaseUrl?: string },
+    extras?: { apiKey?: string; useApi?: boolean; apiModel?: string; apiBaseUrl?: string; mode?: string },
   ) {
     const res = await fetch(`${BASE}/chat`, {
       method: 'POST',
@@ -55,6 +55,7 @@ export const api = {
         session_id: sessionId,
         message,
         ...options,
+        mode: extras?.mode || 'nvidia',
         api_key: extras?.apiKey || '',
         use_api: extras?.useApi || false,
         api_model: extras?.apiModel || 'gpt-4o-mini',

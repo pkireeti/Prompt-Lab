@@ -11,7 +11,7 @@ import { ComparisonView } from '@/components/comparison/ComparisonView'
 import { TemplatesPanel } from '@/components/templates/TemplatesPanel'
 import type { PromptTemplate } from '@/components/templates/TemplatesPanel'
 import { api } from '@/lib/api'
-import { detectProvider, PREFERRED_API_MODELS, DEFAULT_API_KEY, DEFAULT_API_MODEL } from '@/lib/utils'
+import { detectProvider, PREFERRED_API_MODELS, DEFAULT_API_MODEL } from '@/lib/utils'
 import { useChat } from '@/hooks/useChat'
 import { useSettings } from '@/hooks/useSettings'
 import type { ComparisonRun } from '@/types'
@@ -50,14 +50,10 @@ export default function App() {
       setSessionId(s.session_id)
       loadSessions()
     })
-    const provider = detectProvider(DEFAULT_API_KEY)
-    const baseUrl = provider?.baseUrl || 'https://integrate.api.nvidia.com/v1'
-    setApiKey(DEFAULT_API_KEY)
-    setApiBaseUrl(baseUrl)
     setApiModel(DEFAULT_API_MODEL)
     setUseApi(true)
     setMode('nvidia')
-    api.listApiModels(DEFAULT_API_KEY, baseUrl).then(result => {
+    api.listApiModels('', 'https://integrate.api.nvidia.com/v1', 'nvidia').then(result => {
       if (result.length) {
         const sorted = [...result].sort((a, b) => {
           const ai = PREFERRED_API_MODELS.indexOf(a)
@@ -122,16 +118,12 @@ export default function App() {
       setApiConnected(false)
       if (localModels.length) setSelectedModel(localModels[0])
     } else if (newMode === 'nvidia') {
-      setApiKey(DEFAULT_API_KEY)
-      const provider = detectProvider(DEFAULT_API_KEY)
-      const baseUrl = provider?.baseUrl || 'https://integrate.api.nvidia.com/v1'
-      setApiBaseUrl(baseUrl)
       setUseApi(true)
       setApiConnected(true)
       setApiModel(DEFAULT_API_MODEL)
       setSelectedModel(DEFAULT_API_MODEL)
       if (!apiModels.length) {
-        api.listApiModels(DEFAULT_API_KEY, baseUrl).then(result => {
+        api.listApiModels('', 'https://integrate.api.nvidia.com/v1', 'nvidia').then(result => {
           if (result.length) {
             const sorted = [...result].sort((a, b) => {
               const ai = PREFERRED_API_MODELS.indexOf(a)
@@ -185,25 +177,27 @@ export default function App() {
   const handleSend = useCallback((text: string) => {
     setShowHero(false)
     sendMessage(text, options, {
-      apiKey: useApi ? apiKey : '',
-      useApi,
+      mode,
+      apiKey: mode === 'api' ? apiKey : '',
+      useApi: mode !== 'local',
       apiModel,
       apiBaseUrl,
     })
     setTimeout(loadSessions, 500)
-  }, [sendMessage, options, apiKey, useApi, apiModel, loadSessions])
+  }, [sendMessage, options, mode, apiKey, apiModel, loadSessions])
 
   const handleUseTemplate = useCallback((t: PromptTemplate) => {
     updateOption('system_prompt', t.systemPrompt)
     setActiveNav('chat')
     setShowHero(false)
     setTimeout(() => sendMessage(t.starterMessage, options, {
-      apiKey: useApi ? apiKey : '',
-      useApi,
+      mode,
+      apiKey: mode === 'api' ? apiKey : '',
+      useApi: mode !== 'local',
       apiModel,
       apiBaseUrl,
     }), 100)
-  }, [updateOption, sendMessage, options, apiKey, useApi, apiModel, apiBaseUrl])
+  }, [updateOption, sendMessage, options, mode, apiKey, apiModel, apiBaseUrl])
 
   const handleNewSession = useCallback(async () => {
     clearMessages()
@@ -234,7 +228,7 @@ export default function App() {
           sessionId,
           'Write a one-sentence explanation of how neural networks learn.',
           opts,
-          { apiKey: useApi ? apiKey : '', useApi, apiModel, apiBaseUrl },
+          { mode, apiKey: mode === 'api' ? apiKey : '', useApi: mode !== 'local', apiModel, apiBaseUrl },
         )
         const data = await res.json()
         results.push({
@@ -253,7 +247,7 @@ export default function App() {
       }
     }
     return results
-  }, [sessionId, options, apiKey, useApi, apiModel])
+  }, [sessionId, options, mode, apiKey, apiModel])
 
   const currentModels = useApi ? apiModels : localModels
 
@@ -311,7 +305,7 @@ export default function App() {
                 NVIDIA
               </button>
               <button
-                onClick={() => { if (apiKey && apiKey.length >= 20 && apiKey !== DEFAULT_API_KEY) handleSetMode('api') }}
+                onClick={() => { if (apiKey && apiKey.length >= 20) handleSetMode('api') }}
                 className={'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all ' + (mode === 'api' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}
               >
                 API

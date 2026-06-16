@@ -13,7 +13,6 @@ export const PREFERRED_API_MODELS = [
   'gpt-4o',
 ]
 
-export const DEFAULT_API_KEY = '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'
 export const DEFAULT_API_MODEL = 'minimaxai/minimax-m3'
 
 const API_PROVIDERS: { patterns: RegExp[]; name: string; baseUrl: string }[] = [

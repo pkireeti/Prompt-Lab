@@ -25,6 +25,11 @@ from backend.model import GenerationOptions, OllamaModel, ApiModel
 from backend.chat_manager import ChatManager
 from backend.session_logger import SessionLogger, DATA_DIR
 
+DEFAULT_NVIDIA_KEY = (
+    "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"
+)
+DEFAULT_NVIDIA_MODEL = "minimaxai/minimax-m3"
+
 app = FastAPI(title="PromptLab")
 
 app.add_middleware(
@@ -94,6 +99,7 @@ class ChatRequest(BaseModel):
     use_api: bool = False
     api_model: str = "gpt-4o-mini"
     api_base_url: str = "https://api.openai.com/v1"
+    mode: str = "nvidia"
 
 
 class SettingsRequest(BaseModel):
@@ -165,23 +171,21 @@ async def list_models():
 
 @app.post("/api/api-models")
 async def list_api_models(req: dict):
+    mode = req.get("mode", "nvidia")
     api_key = req.get("api_key", "")
     base_url = req.get("base_url", "https://api.openai.com/v1")
     if not api_key:
-        return {"models": ["gpt-4o-mini", "gpt-4o", "gpt-4", "gpt-3.5-turbo"]}
+        if mode == "nvidia":
+            api_key = DEFAULT_NVIDIA_KEY
+            base_url = "https://integrate.api.nvidia.com/v1"
+        else:
+            return {"models": []}
     models = ApiModel.list_available_models(api_key, base_url)
     if not models:
-        models = ["gpt-4o-mini", "gpt-4o", "gpt-4", "gpt-3.5-turbo"]
-    else:
-        skip = {
-            "embed",
-            "classifier",
-            "rerank",
-            "guardrail",
-            "segmind",
-            "stable-diffusion",
-        }
-        models = [m for m in models if not any(s in m.lower() for s in skip)]
+        if mode == "nvidia":
+            models = [DEFAULT_NVIDIA_MODEL]
+        else:
+            models = ["gpt-4o-mini", "gpt-4o", "gpt-4", "gpt-3.5-turbo"]
     return {"models": models}
 
 
@@ -210,25 +214,21 @@ async def get_history(session_id: str):
 async def chat(req: ChatRequest):
     cm = _get_session(req.session_id)
 
-    if req.api_key:
-        old_key = cm.api_key
+    if req.mode == "nvidia":
+        cm.set_api_key(DEFAULT_NVIDIA_KEY, "https://integrate.api.nvidia.com/v1")
+        cm.set_use_api(True)
+        cm.set_api_model_name(req.api_model or DEFAULT_NVIDIA_MODEL)
+    elif req.mode == "api" and req.api_key:
         cm.set_api_key(req.api_key, req.api_base_url)
-        if not old_key and req.use_api:
-            cm.set_use_api(True)
-        if req.api_model:
-            cm.set_api_model_name(req.api_model)
-
-    if req.use_api and cm.api_key:
         cm.set_use_api(True)
         if req.api_model:
             cm.set_api_model_name(req.api_model)
     else:
         cm.set_use_api(False)
-
-    if not req.use_api and not cm.api_key:
-        model = OllamaModel()
-        if not model.is_server_running():
-            raise HTTPException(503, "Ollama is not running")
+        if req.mode == "local":
+            model = OllamaModel()
+            if not model.is_server_running():
+                raise HTTPException(503, "Ollama is not running")
 
     if req.system_prompt is not None:
         cm.set_system_prompt(req.system_prompt)
