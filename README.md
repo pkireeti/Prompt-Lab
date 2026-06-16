@@ -1,58 +1,43 @@
 # PromptLab — AI Teaching Lab
 
-A PyQt6 desktop app for experimenting with LLM sampling parameters (temperature, top-k, top-p) using local Ollama models.
+A web-based interactive lab for experimenting with LLM sampling parameters (temperature, top-k, top-p) using local Ollama models and cloud APIs (NVIDIA, OpenAI, Groq).
 
 ## Features
 
-- Dropdown to select any locally installed Ollama model
-- Adjustable sliders for temperature, top-k, top-p, max tokens, repeat penalty
-- Random / fixed seed control
-- Streaming responses
-- System prompt presets (teacher, professor, programming-only)
-- Chat history logging to CSV
-- Temperature vs response-length chart generation
-- Settings auto-save on close
+- Three-mode toggle: Local (Ollama) | NVIDIA (free) | API (your own key)
+- Adjustable sliders for temperature, top-k, top-p, max tokens, repeat penalty, seed
+- Streaming responses with real-time analytics (tokens, latency, speed)
+- Side-by-side comparison mode with configurable parameters per slot
+- System prompt presets and custom prompt templates
+- Chat history logging
+- Dark-mode UI inspired by ChatGPT / Claude / Linear
+
+## Quick Start (Web App)
+
+```bash
+# 1. Install Python dependencies
+pip install -r requirements.txt
+
+# 2. Install frontend deps & build
+cd web_app/frontend
+npm install
+npm run build
+cd ../..
+
+# 3. Run the server
+python -m uvicorn web_app.main:app --host 0.0.0.0 --port 8000
+
+# 4. Open http://localhost:8000
+```
 
 ## Requirements
 
-- **Ollama** — Download from [ollama.com](https://ollama.com)
+- **Ollama** (optional, for local models) — [ollama.com](https://ollama.com)
 - **Python 3.10+**
+- **Node.js 18+** (for frontend build)
 
-## Setup
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/pkireeti/Prompt-Lab.git
-cd Prompt-Lab
-
-# 2. Install Python dependencies
-pip install -r requirements.txt
-
-# 3. Pull a model (example)
-ollama pull qwen3:1.7b
-
-# 4. Run the app
-python main.py
-```
-
-## Usage
-
-1. Select a model from the dropdown in the left panel
-2. Adjust sampling sliders (temperature, top-k, top-p)
-3. Type a message in the chat and press Enter
-4. Observe how parameter changes affect responses
-
-## Dependencies
-
-- PyQt6
-- requests
-- pandas
-- numpy
-- matplotlib
-
-## Build Executable (optional)
+## Docker
 
 ```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name PromptLab main.py
+docker compose up
 ```
