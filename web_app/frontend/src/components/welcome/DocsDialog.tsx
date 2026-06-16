@@ -11,6 +11,29 @@ interface DocsDialogProps {
 
 const sections = [
   {
+    icon: Globe,
+    title: 'Local vs NVIDIA vs API — Which Mode to Use?',
+    content: `
+      PromptLab has three modes, switchable via the toggle in the header bar:
+
+      • Local (Ollama) — Runs models on your own machine using Ollama. Fully offline,
+        private, and free. Best for experimentation, privacy, and when you want to
+        understand how smaller models behave. Requires Ollama installed locally.
+
+      • NVIDIA (Default) — Uses a pre-configured free NVIDIA API key. No setup needed,
+        just start chatting. Uses cloud-hosted models like minimax-m3 and
+        meta/llama-3.1-8b-instruct. Great for quick testing without local resources.
+
+      • API — Connect your own API key from OpenAI, Groq, Perplexity, or any
+        OpenAI-compatible provider. Paste your key in the sidebar and the app
+        auto-detects your provider. Useful for accessing larger models (GPT-4o,
+        Claude, etc.) or proprietary endpoints.
+
+      Mode affects WHERE the model runs, not HOW. Parameters, comparison mode,
+      system prompts, and templates work identically in all three modes.
+    `,
+  },
+  {
     icon: BookOpen,
     title: 'What is PromptLab?',
     content: `

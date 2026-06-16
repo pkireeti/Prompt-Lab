@@ -276,10 +276,6 @@ export default function App() {
         onApiDisconnect={handleApiDisconnect}
         onApiModelChange={setApiModel}
         apiModels={apiModels}
-        sessions={sessions}
-        currentSessionId={sessionId}
-        onSelectSession={handleSelectSession}
-        onDeleteSession={handleDeleteSession}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -344,7 +340,41 @@ export default function App() {
           </div>
         </div>
 
-        {activeNav === 'templates' ? (
+        {activeNav === 'models' ? (
+          <div className="flex-1 overflow-y-auto p-6">
+            <h2 className="text-lg font-semibold text-text-primary mb-4">Available Models</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-4 rounded-xl bg-card border border-border">
+                <h3 className="text-sm font-medium text-text-primary mb-2">Local (Ollama)</h3>
+                <div className="space-y-1.5">
+                  {localModels.length === 0 ? (
+                    <p className="text-xs text-text-muted">No local models found</p>
+                  ) : localModels.map(m => (
+                    <div key={m} className={'flex items-center justify-between px-3 py-2 rounded-lg text-xs border ' + (m === selectedModel && !useApi ? 'bg-white/[0.06] border-white/20 text-text-primary' : 'border-transparent text-text-secondary')}>
+                      <span>{m}</span>
+                      <span className="text-[10px] text-text-muted bg-surface px-1.5 py-0.5 rounded border border-border">local</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 rounded-xl bg-card border border-border">
+                <h3 className="text-sm font-medium text-text-primary mb-2">
+                  {mode === 'nvidia' ? 'NVIDIA Cloud' : mode === 'api' ? 'API' : 'NVIDIA Cloud'}
+                </h3>
+                <div className="space-y-1.5">
+                  {apiModels.length === 0 ? (
+                    <p className="text-xs text-text-muted">No API models available</p>
+                  ) : apiModels.map(m => (
+                    <div key={m} className={'flex items-center justify-between px-3 py-2 rounded-lg text-xs border ' + (m === selectedModel && useApi ? 'bg-white/[0.06] border-white/20 text-text-primary' : 'border-transparent text-text-secondary')}>
+                      <span className="truncate">{m}</span>
+                      <span className="text-[10px] text-text-muted bg-surface px-1.5 py-0.5 rounded border border-border shrink-0 ml-2">{mode}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : activeNav === 'templates' ? (
           <TemplatesPanel onUseTemplate={handleUseTemplate} />
         ) : showHero ? (
           <HeroSection onStartExperiment={handleStartExperiment} onOpenDocs={() => setShowDocs(true)} />

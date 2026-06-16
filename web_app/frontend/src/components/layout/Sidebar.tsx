@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   PanelLeftClose, MessageSquare, Compass, HelpCircle, Plus,
-  ChevronDown, ChevronRight, FileText, MoreHorizontal,
+  ChevronDown, ChevronRight, FileText,
   Key, Globe, ChevronUp,
 } from 'lucide-react'
 import { cn, detectProvider } from '@/lib/utils'
@@ -24,10 +24,7 @@ interface SidebarProps {
   onApiDisconnect: () => void
   onApiModelChange: (model: string) => void
   apiModels: string[]
-  sessions: { id: string; title: string; timestamp: string; messages: number; model: string }[]
-  currentSessionId: string
-  onSelectSession: (id: string) => void
-  onDeleteSession: (id: string) => void
+
 }
 
 export function Sidebar({
@@ -35,9 +32,8 @@ export function Sidebar({
   activeNav, onNavChange,
   apiKey, apiBaseUrl, useApi, apiModel, apiConnected,
   onApiKeyChange, onApiBaseUrlChange, onApiDisconnect, onApiModelChange, apiModels,
-  sessions, currentSessionId, onSelectSession, onDeleteSession,
 }: SidebarProps) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ explore: true, history: true, apiSettings: false })
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ explore: true, apiSettings: false })
   const [showApiKey, setShowApiKey] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -196,35 +192,7 @@ export function Sidebar({
               </AnimatePresence>
             </div>
 
-            {/* History */}
-            <div className="mt-2 px-2 flex-1 min-h-0 flex flex-col">
-              <button onClick={() => setExpanded(p => ({ ...p, history: !p.history }))} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-                <ChevronRight className={cn('w-3.5 h-3.5 transition-transform', expanded.history && 'rotate-90')} /> History
-              </button>
-              <AnimatePresence>{expanded.history && <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden flex-1 min-h-0">
-                <div className="overflow-y-auto space-y-1 pt-1 pr-1 h-full" style={{ scrollbarWidth: 'thin' }}>
-                  {sessions.length === 0 ? (
-                    <div className="px-3 py-4 text-xs text-text-muted text-center">No conversations yet</div>
-                  ) : (
-                    [...sessions].reverse().map(s => (
-                      <div
-                        key={s.id}
-                        onClick={() => onSelectSession(s.id)}
-                        className={cn('flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all group cursor-pointer', s.id === currentSessionId ? 'bg-white/[0.04] text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.02]')}
-                      >
-                        <span className="truncate flex-1 text-xs">{s.title}</span>
-                        <button
-                          onClick={e => { e.stopPropagation(); onDeleteSession(s.id) }}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-text-muted hover:text-text-primary"
-                        >
-                          <MoreHorizontal className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </motion.div>}</AnimatePresence>
-            </div>
+            <div className="flex-1" />
             {/* Bottom: Help & Docs */}
             <div className="border-t border-border py-1 px-2">
               <button onClick={onOpenDocs} className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-text-secondary hover:text-text-primary hover:bg-white/[0.02] transition-all"><HelpCircle className="w-4 h-4" /> Help & Docs</button>
