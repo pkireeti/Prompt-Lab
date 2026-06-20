@@ -294,7 +294,7 @@ export default function App() {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-3 sm:px-4 h-14 border-b border-border bg-background gap-2">
+        <div className="flex items-center justify-between px-3 sm:px-4 h-14 border-b border-border bg-background gap-2 overflow-x-auto scrollbar-none">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button onClick={() => setSidebarCollapsed(false)} className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-colors shrink-0">
               <PanelLeftClose className="w-4 h-4 rotate-180" />
