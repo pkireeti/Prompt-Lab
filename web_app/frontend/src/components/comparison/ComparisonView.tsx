@@ -83,7 +83,7 @@ export function ComparisonView({ open, onClose, prompt, onRunComparison }: Compa
                 Prompt: <span className="text-text-secondary">{prompt}</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 {slots.map((slot, i) => (
                   <div key={i} className="rounded-xl border border-border p-3 bg-card space-y-2">
                     <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export function ComparisonView({ open, onClose, prompt, onRunComparison }: Compa
               </Button>
 
               {runs.length > 0 && (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {runs.map((run, i) => (
                     <div key={i} className="rounded-xl border border-border p-3 bg-card">
                       <div className="flex items-center justify-between mb-2">

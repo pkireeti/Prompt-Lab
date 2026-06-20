@@ -26,7 +26,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       className="mb-6"
     >
       {isUser ? (
-        <div className="max-w-[720px] ml-auto">
+        <div className="max-w-[85%] sm:max-w-[720px] ml-auto">
           <div className="bg-card border border-border rounded-2xl px-4 py-3">
             <p className="text-sm text-text-primary whitespace-pre-wrap">{message.content}</p>
           </div>
@@ -59,7 +59,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
             </div>
           </div>
           {message.analytics && (
-            <div className="mt-3 grid grid-cols-4 gap-3">
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {[
                 { label: 'Tokens', value: message.analytics.tokens_used, sub: 'tokens used' },
                 { label: 'Latency', value: `${(message.analytics.latency_ms / 1000).toFixed(2)}s`, sub: 'response time' },
