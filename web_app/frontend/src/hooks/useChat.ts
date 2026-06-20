@@ -57,10 +57,10 @@ export function useChat(sessionId: string) {
               const data = JSON.parse(line.slice(6))
               if (data.token) {
                 fullContent += data.token
-                tokenCount++
                 setStreamingContent(fullContent)
               }
               if (data.done) {
+                tokenCount = fullContent.split(/\s+/).filter(Boolean).length
                 const latency = performance.now() - startTime
                 const analytics: ResponseAnalytics = {
                   tokens_used: tokenCount,
@@ -98,7 +98,7 @@ export function useChat(sessionId: string) {
         const data = await res.json()
         const latency = performance.now() - startTime
         const content = data.reply || 'No response'
-        tokenCount = content.split(' ').length
+        tokenCount = content.split(/\s+/).filter(Boolean).length
         const analytics: ResponseAnalytics = {
           tokens_used: tokenCount,
           latency_ms: Math.round(latency),

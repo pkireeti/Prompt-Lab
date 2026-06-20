@@ -251,7 +251,7 @@ export default function App() {
           top_p: slot.top_p,
           response: data.reply || '(no response)',
           analytics: {
-            tokens_used: (data.reply || '').split(' ').length,
+            tokens_used: (data.reply || '').split(/\s+/).filter(Boolean).length,
             latency_ms: 0,
             model: useApi ? apiModel : 'local',
             temperature: slot.temperature,
