@@ -199,16 +199,17 @@ export default function App() {
   }, [sendMessage, options, mode, apiKey, apiModel, loadSessions])
 
   const handleUseTemplate = useCallback((t: PromptTemplate) => {
-    updateOption('system_prompt', t.systemPrompt)
     setActiveNav('chat')
     setShowHero(false)
-    setTimeout(() => sendMessage(t.starterMessage, options, {
+    const msgOptions = { ...options, system_prompt: t.systemPrompt }
+    sendMessage(t.starterMessage, msgOptions, {
       mode,
       apiKey: mode === 'api' ? apiKey : '',
       useApi: mode !== 'local',
       apiModel,
       apiBaseUrl,
-    }), 100)
+    })
+    updateOption('system_prompt', t.systemPrompt)
   }, [updateOption, sendMessage, options, mode, apiKey, apiModel, apiBaseUrl])
 
   const handleNewSession = useCallback(async () => {
