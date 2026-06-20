@@ -295,7 +295,7 @@ export default function App() {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-3 sm:px-4 h-14 border-b border-border bg-background gap-2 overflow-x-auto scrollbar-none">
+        <div className="flex items-center justify-between px-3 sm:px-4 h-14 border-b border-border bg-background gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button onClick={() => setSidebarCollapsed(false)} className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-colors shrink-0">
               <PanelLeftClose className="w-4 h-4 rotate-180" />
@@ -305,7 +305,7 @@ export default function App() {
                 onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-card text-sm font-medium text-text-primary hover:bg-white/[0.04] transition-all"
               >
-                <span className="max-w-[160px] truncate">{selectedModel || 'Select model'}</span>
+                <span className="max-w-[100px] sm:max-w-[160px] truncate">{selectedModel || 'Select model'}</span>
                 <ChevronDown className={'w-3.5 h-3.5 text-text-muted transition-transform ' + (modelDropdownOpen ? 'rotate-180' : '')} />
               </button>
               <AnimatePresence>
@@ -336,10 +336,10 @@ export default function App() {
                 )}
               </AnimatePresence>
             </div>
-            <div className="flex items-center gap-1 px-1 py-0.5 rounded-full border border-border bg-card overflow-x-auto shrink-0 scrollbar-none">
-              <button onClick={() => handleSetMode('local')} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'local' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>Local</button>
-              <button onClick={() => handleSetMode('nvidia')} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'nvidia' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>NVIDIA</button>
-              <button onClick={() => { if (apiKey && apiKey.length >= 20) handleSetMode('api') }} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'api' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>API</button>
+            <div className="flex items-center gap-0.5 sm:gap-1 px-1 py-0.5 rounded-full border border-border bg-card shrink-0">
+              <button onClick={() => handleSetMode('local')} className={'px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'local' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>Local</button>
+              <button onClick={() => handleSetMode('nvidia')} className={'px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'nvidia' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>NVIDIA</button>
+              <button onClick={() => { if (apiKey && apiKey.length >= 20) handleSetMode('api') }} className={'px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'api' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>API</button>
             </div>
             <span className="hidden sm:block text-[11px] text-text-muted truncate max-w-[80px] lg:max-w-[160px]">{selectedModel || ''}</span>
           </div>
