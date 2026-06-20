@@ -41,12 +41,9 @@ app.add_middleware(
 )
 
 BASE = Path(__file__).resolve().parent
-STATIC = BASE / "static"
-TEMPLATES = BASE / "templates"
 DIST = BASE / "frontend" / "dist"
 
 app.mount("/assets", StaticFiles(directory=str(DIST / "assets")), name="assets")
-app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 sessions: dict[str, ChatManager] = {}
 logger = SessionLogger()
