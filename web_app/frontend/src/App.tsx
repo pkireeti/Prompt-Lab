@@ -335,10 +335,10 @@ export default function App() {
                 )}
               </AnimatePresence>
             </div>
-            <div className="flex items-center gap-1 px-1 py-0.5 rounded-full border border-border bg-card shrink-0">
-              <button onClick={() => handleSetMode('local')} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all ' + (mode === 'local' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>L</button>
-              <button onClick={() => handleSetMode('nvidia')} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all ' + (mode === 'nvidia' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>N</button>
-              <button onClick={() => { if (apiKey && apiKey.length >= 20) handleSetMode('api') }} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all ' + (mode === 'api' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>API</button>
+            <div className="flex items-center gap-1 px-1 py-0.5 rounded-full border border-border bg-card overflow-x-auto shrink-0 scrollbar-none">
+              <button onClick={() => handleSetMode('local')} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'local' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>Local</button>
+              <button onClick={() => handleSetMode('nvidia')} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'nvidia' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>NVIDIA</button>
+              <button onClick={() => { if (apiKey && apiKey.length >= 20) handleSetMode('api') }} className={'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all whitespace-nowrap ' + (mode === 'api' ? 'bg-white text-black' : 'text-text-muted hover:text-text-secondary')}>API</button>
             </div>
             <span className="hidden sm:block text-[11px] text-text-muted truncate max-w-[80px] lg:max-w-[160px]">{selectedModel || ''}</span>
           </div>
